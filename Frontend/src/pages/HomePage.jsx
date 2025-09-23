@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const dummyPosts = [
   {
@@ -21,6 +22,7 @@ const dummyPosts = [
 
 export default function HomePage() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
 
   const filteredPosts = dummyPosts.filter((post) =>
     post.title.toLowerCase().includes(search.toLowerCase())
@@ -65,7 +67,17 @@ export default function HomePage() {
 
       {/* Blog Posts List */}
       <main className="max-w-3xl mx-auto p-6">
-        <h3 className="text-2xl font-semibold mb-4">Latest Posts</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-2xl font-semibold">Latest Posts</h3>
+
+          {/* 🔹 Create Blog Button */}
+          <button
+            onClick={() => navigate("/create-blog")}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            + Create Blog
+          </button>
+        </div>
 
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post) => (
