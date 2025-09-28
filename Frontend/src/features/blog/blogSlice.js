@@ -2,32 +2,42 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-// Initial state
 const initialState = {
   posts: [],
-  status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  status: 'idle',
   error: null,
 };
 
-// ------------------- THUNKS ------------------- //
-
 // Fetch all posts
 export const fetchPosts = createAsyncThunk('blog/fetchPosts', async () => {
-  const response = await axios.get('http://localhost:5000/api/posts');
+  const response = await axios.get('http://localhost:5000/api/posts', {
+    withCredentials: true,
+  });
   return response.data;
 });
 
 // Create a new post
-export const createPost = createAsyncThunk('blog/createPost', async (postData) => {
-  const response = await axios.post('http://localhost:5000/api/posts', postData);
-  return response.data;
-});
+export const createPost = createAsyncThunk(
+  'blog/createPost',
+  async (postData, thunkAPI) => {
+    try {
+      const response = await axios.post('http://localhost:5000/api/posts', postData, {
+        withCredentials: true,  // Important for sending auth cookies!
+      });
+      return response.data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response?.data?.error || 'Failed to create post');
+    }
+  }
+);
 
 // Update a post
 export const updatePost = createAsyncThunk(
   'blog/updatePost',
   async ({ id, title, content }) => {
-    const response = await axios.put(`http://localhost:5000/api/posts/${id}`, { title, content });
+    const response = await axios.put(`http://localhost:5000/api/posts/${id}`, { title, content }, {
+      withCredentials: true,
+    });
     return response.data;
   }
 );
@@ -36,12 +46,13 @@ export const updatePost = createAsyncThunk(
 export const deletePost = createAsyncThunk(
   'blog/deletePost',
   async (id) => {
-    await axios.delete(`http://localhost:5000/api/posts/${id}`);
-    return id; // return deleted post id
+    await axios.delete(`http://localhost:5000/api/posts/${id}`, {
+      withCredentials: true,
+    });
+    return id;
   }
 );
 
-// ------------------- SLICE ------------------- //
 const blogSlice = createSlice({
   name: 'blog',
   initialState,
@@ -51,6 +62,7 @@ const blogSlice = createSlice({
       // FETCH
       .addCase(fetchPosts.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.status = 'succeeded';
@@ -62,8 +74,17 @@ const blogSlice = createSlice({
       })
 
       // CREATE
+      .addCase(createPost.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
       .addCase(createPost.fulfilled, (state, action) => {
+        state.status = 'succeeded';
         state.posts.push(action.payload);
+      })
+      .addCase(createPost.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || action.error.message;
       })
 
       // UPDATE
@@ -83,5 +104,4 @@ const blogSlice = createSlice({
   },
 });
 
-// ------------------- EXPORTS ------------------- //
 export default blogSlice.reducer;

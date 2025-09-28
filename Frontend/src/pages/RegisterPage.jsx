@@ -9,20 +9,19 @@ import {
   updatePassword 
 } from '../features/form/registrationFormSlice';
 import { setAuthError, setAuthLoading } from '../features/auth/authSlice';
-import axios from 'axios';
+import API from '../api'; // ✅ use centralized axios instance
 
 const RegisterPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Get the form data from Redux store
+  // Redux state
   const { username, email, password } = useSelector(
     (state) => state.registrationForm
   );
-
-  // Get auth state from Redux store
   const { status, error } = useSelector((state) => state.auth);
 
+  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     switch (name) {
@@ -40,29 +39,30 @@ const RegisterPage = () => {
     }
   };
 
+  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch(setAuthLoading());
 
-    const endpoint = 'http://localhost:5000/api/auth/register';
-    const data = { username, email, password };
-
     try {
-      const response = await axios.post(endpoint, data, {
-        withCredentials: true,
+      // ✅ baseURL comes from VITE_API_URL in .env
+      const response = await API.post('/auth/register', {
+        username,
+        email,
+        password,
       });
 
       console.log('✅ Registration successful:', response.data);
 
-      // Reset the form fields after successful submission
+      // Reset the form
       dispatch(resetRegistrationForm());
 
-      // Navigate to login page
+      // Redirect to login page
       navigate('/login');
-    } catch (error) {
-      console.log('❌ Registration failed:', error);
-      if (error.response && error.response.data && error.response.data.error) {
-        dispatch(setAuthError(error.response.data.error));
+    } catch (err) {
+      console.error('❌ Registration failed:', err);
+      if (err.response?.data?.error) {
+        dispatch(setAuthError(err.response.data.error));
       } else {
         dispatch(setAuthError('An unexpected error occurred. Please try again.'));
       }
@@ -76,14 +76,14 @@ const RegisterPage = () => {
           Register
         </h2>
 
-        {/* Show error */}
+        {/* Error */}
         {error && (
           <div className="p-4 mb-4 bg-red-100 text-red-700 rounded-md">
             {error}
           </div>
         )}
 
-        {/* Show success */}
+        {/* Success */}
         {status === 'succeeded' && (
           <div className="p-4 mb-4 bg-green-100 text-green-700 text-center rounded-md">
             Registration Successful!
@@ -93,10 +93,7 @@ const RegisterPage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Username */}
           <div>
-            <label
-              htmlFor="username"
-              className="block text-gray-700 font-semibold mb-2"
-            >
+            <label htmlFor="username" className="block text-gray-700 font-semibold mb-2">
               Username
             </label>
             <input
@@ -105,8 +102,7 @@ const RegisterPage = () => {
               name="username"
               value={username}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md 
-                        focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow"
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow"
               placeholder="Enter your username"
               required
             />
@@ -114,10 +110,7 @@ const RegisterPage = () => {
 
           {/* Email */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-gray-700 font-semibold mb-2"
-            >
+            <label htmlFor="email" className="block text-gray-700 font-semibold mb-2">
               Email
             </label>
             <input
@@ -126,8 +119,7 @@ const RegisterPage = () => {
               name="email"
               value={email}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md 
-                        focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow"
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow"
               placeholder="Enter your email"
               required
             />
@@ -135,10 +127,7 @@ const RegisterPage = () => {
 
           {/* Password */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-gray-700 font-semibold mb-2"
-            >
+            <label htmlFor="password" className="block text-gray-700 font-semibold mb-2">
               Password
             </label>
             <input
@@ -147,22 +136,20 @@ const RegisterPage = () => {
               name="password"
               value={password}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md 
-                        focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow"
+              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-shadow"
               placeholder="Enter your password"
               required
             />
           </div>
 
-          {/* Submit button */}
+          {/* Button */}
           <button
             type="submit"
-            className={`w-full px-6 py-3 rounded-full font-bold text-white transition-colors duration-200 
-              ${
-                status === 'loading'
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2'
-              }`}
+            className={`w-full px-6 py-3 rounded-full font-bold text-white transition-colors duration-200 ${
+              status === 'loading'
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2'
+            }`}
           >
             {status === 'loading' ? 'Registering...' : 'Register'}
           </button>

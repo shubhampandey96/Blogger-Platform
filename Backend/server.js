@@ -12,8 +12,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Allow multiple origins (React on 3000, Vite on 5173)
-const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+// ✅ Allow both localhost (dev) and Vercel (prod)
+const allowedOrigins = [
+  "http://localhost:3000", // CRA dev
+  "http://localhost:5173", // Vite dev
+  "https://blogger-platform-ebon.vercel.app", // Vercel deployed frontend
+];
 
 app.use(
   cors({
@@ -50,5 +54,5 @@ app.get("/", (req, res) => res.send("📝 Blog API is running..."));
 
 // ✅ Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

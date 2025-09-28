@@ -1,8 +1,8 @@
-import axios from 'axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { resetLoginForm, updateEmail, updatePassword } from '../features/form/loginFormSlice';
 import { loginUser, setAuthError, setAuthLoading } from '../features/auth/authSlice';
+import API from '../api'; // ✅ use centralized axios instance
 
 const LoginPage = () => {
     const dispatch = useDispatch();
@@ -28,19 +28,16 @@ const LoginPage = () => {
         dispatch(setAuthLoading());
 
         try {
-            const response = await axios.post(
-                'http://localhost:5000/api/auth/login',
-                { email, password },
-                { withCredentials: true }
-            );
+            // ✅ now using API instance (baseURL from .env)
+            const response = await API.post('/auth/login', { email, password });
 
             console.log('✅ Login successful:', response.data);
             dispatch(loginUser(response.data));
             dispatch(resetLoginForm());
-            navigate('/'); // ✅ navigate after success
+            navigate('/'); // redirect after login
         } catch (err) {
             console.error('❌ Login failed:', err);
-            if (err.response && err.response.data && err.response.data.error) {
+            if (err.response?.data?.error) {
                 dispatch(setAuthError(err.response.data.error));
             } else {
                 dispatch(setAuthError('An unexpected error occurred. Please try again.'));
@@ -70,10 +67,7 @@ const LoginPage = () => {
                 {/* Login form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label
-                            htmlFor="email"
-                            className="block text-gray-700 font-semibold mb-2"
-                        >
+                        <label htmlFor="email" className="block text-gray-700 font-semibold mb-2">
                             Email
                         </label>
                         <input
@@ -89,10 +83,7 @@ const LoginPage = () => {
                     </div>
 
                     <div>
-                        <label
-                            htmlFor="password"
-                            className="block text-gray-700 font-semibold mb-2"
-                        >
+                        <label htmlFor="password" className="block text-gray-700 font-semibold mb-2">
                             Password
                         </label>
                         <input
