@@ -10,42 +10,35 @@ const createToken = (user) => {
   );
 };
 
+// Cookie options for cross-origin requests
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // allow cross-site cookies in prod
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+// ✅ REGISTER
 export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Basic validation
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if email already exists
     const existingEmail = await User.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({ error: 'Email already in use' });
-    }
+    if (existingEmail) return res.status(400).json({ error: 'Email already in use' });
 
-    // Optional: Check if username already exists
     const existingUsername = await User.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ error: 'Username already in use' });
-    }
+    if (existingUsername) return res.status(400).json({ error: 'Username already in use' });
 
-    // Create user (password hashing handled in User model pre-save hook)
     const user = await User.create({ username, email, password });
 
-    // Generate JWT token
     const token = createToken(user);
 
-    // Set JWT in HTTP-only cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-    });
+    res.cookie('token', token, cookieOptions);
 
-    // Send back user data (excluding password)
     res.status(201).json({
       user: {
         id: user._id,
@@ -56,50 +49,30 @@ export const register = async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error:', err);
-
-    // Handle Mongo duplicate key errors (e.g. username or email)
     if (err.code === 11000) {
       const duplicatedField = Object.keys(err.keyValue)[0];
       return res.status(400).json({ error: `${duplicatedField} already exists` });
     }
-
     res.status(500).json({ error: 'Registration failed' });
   }
 };
 
+// ✅ LOGIN
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
 
-    // Validate inputs
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    // Find user by email
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Verify password
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Generate JWT token
     const token = createToken(user);
 
-    // Set token cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie('token', token, cookieOptions);
 
-    // Return user info
     res.json({
       user: {
         id: user._id,
@@ -114,11 +87,8 @@ export const login = async (req, res) => {
   }
 };
 
+// ✅ LOGOUT
 export const logout = (req, res) => {
-  res.clearCookie('token', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-  });
+  res.clearCookie('token', cookieOptions);
   res.json({ message: 'Logged out successfully' });
 };

@@ -12,26 +12,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Allow both localhost (dev) and Vercel (prod)
+// ✅ Allow both local development and Vercel frontend
 const allowedOrigins = [
   "http://localhost:3000", // CRA dev
   "http://localhost:5173", // Vite dev
-  "https://blogger-platform-ebon.vercel.app", // Vercel deployed frontend
+  "https://blogger-platform-ebon.vercel.app", // Vercel frontend
+  "https://blogger-platform-mocha.vercel.app", // another Vercel frontend
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // allow requests with no origin (like Postman)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true,
+    credentials: true, // allow cookies and authentication headers
   })
 );
 
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
 
