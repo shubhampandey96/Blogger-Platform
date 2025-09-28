@@ -17,7 +17,8 @@ const allowedOrigins = [
   "http://localhost:3000", // CRA dev
   "http://localhost:5173", // Vite dev
   "https://blogger-platform-ebon.vercel.app", // Vercel frontend
-  "https://blogger-platform-mocha.vercel.app", // another Vercel frontend
+  "https://blogger-platform-mocha.vercel.app",
+  "https://blogger-platform-w1qg.vercel.app", // another Vercel frontend
 ];
 
 app.use(
